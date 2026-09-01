@@ -1,0 +1,63 @@
+name: Teste MuDomix Cloud
+
+on:
+  workflow_dispatch:
+
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar Playwright
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Testar MuDomix
+        run: |
+          python - <<'PY'
+          from playwright.sync_api import sync_playwright
+
+          url = "https://mudomix.com/market/items?order=price_asc"
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True)
+
+              page = browser.new_page()
+
+              response = page.goto(
+                  url,
+                  wait_until="domcontentloaded",
+                  timeout=60000
+              )
+
+              print("HTTP:", response.status if response else "sem resposta")
+              print("TITLE:", page.title())
+              print("URL FINAL:", page.url)
+
+              html = page.content()
+
+              print("HTML LENGTH:", len(html))
+              print("MU ITEM CARDS:", page.locator(".mu-item-card").count())
+
+              page.screenshot(
+                  path="mudomix-test.png",
+                  full_page=True
+              )
+
+              browser.close()
+          PY
+
+      - name: Salvar screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: mudomix-test
+          path: mudomix-test.png
