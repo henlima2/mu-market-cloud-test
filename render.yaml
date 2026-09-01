@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: mu-market-cloud-test
+    runtime: python
+    plan: free
+
+    buildCommand: |
+      pip install -r requirements.txt
+      playwright install chromium
+      playwright install-deps chromium
+
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
